@@ -251,10 +251,11 @@ class wishlist_optimiser:
         self.shippingAmount = []
         self.nextSA = []
         for pid in self.productsId:
-            req = "SELECT Name FROM Product WHERE ID_PRODUCT="+str(pid)
+            req = "SELECT Name, Author FROM Product WHERE ID_PRODUCT="+str(pid)
             self.mycursor.execute(req)
             res = self.mycursor.fetchone() or [""]
             self.productsHeadLine.append(res[0])
+            self.productsAutor.append(res[1])
             req = "SELECT Id_Seller, Price, shippingAmount, NextSA FROM Prices WHERE ID_PRODUCT="+str(pid)
             self.mycursor.execute(req)
             res = self.mycursor.fetchall()
