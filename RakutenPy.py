@@ -18,7 +18,7 @@ from itertools import count
 
 # CONSTANTS
 # version number
-_AUTHORIZATION_ = #TO COMPLETE
+_AUTHORIZATION_ = #TODO
 _V_ = '0.4'
 LINESKEEP=1000
 BESTPRINT=1
@@ -27,8 +27,8 @@ normalsigma = 1
 _HOST_ = "127.0.0.1"
 _DATABASE_ = "rakuten"
 _DBUSER_ = "rakuten"
-_DBPASSWORD_ = #TO COMPLETE
-_DBSOCKET_ = "/opt/local/var/run/mariadb-10.2/mysqld.sock" #CHANGE IF NECESSARY
+_DBPASSWORD_ = #TODO
+_DBSOCKET_ = "/opt/local/var/run/mariadb-10.2/mysqld.sock"
 
 np.set_printoptions(precision=2, linewidth=99999, suppress=True, threshold=np.inf)
 
@@ -92,17 +92,17 @@ class wishlist_optimiser:
         self.mycursor.execute(req)
         self.mydb.commit()
         self.printOK()
-        if self.prices_update:
-            self.printDoing("DB truncate Prices Table")
-            req = "TRUNCATE TABLE Prices;"
-            self.mycursor.execute(req)
-            self.mydb.commit()
-            self.printOK()
-            self.printDoing("DB truncate Product Table")
-            req = "DELETE FROM Product;"
-            self.mycursor.execute(req)
-            self.mydb.commit()
-            self.printOK()
+        # if self.prices_update:
+        #     self.printDoing("DB truncate Prices Table")
+        #     req = "TRUNCATE TABLE Prices;"
+        #     self.mycursor.execute(req)
+        #     self.mydb.commit()
+        #     self.printOK()
+        #     self.printDoing("DB truncate Product Table")
+        #     req = "DELETE FROM Product;"
+        #     self.mycursor.execute(req)
+        #     self.mydb.commit()
+        #     self.printOK()
 
 
     # def getUserId(self, args):
@@ -232,7 +232,8 @@ class wishlist_optimiser:
         self.mycursor.executemany(req, val)
         self.mydb.commit()
         req = "INSERT IGNORE INTO Product (ID_PRODUCT, NAME, AUTHOR, EDITO) VALUES (%s, %s, %s, %s) "
-        val = [(int(pid), title, author, d["description"])]
+        des = d["description"] if "description" in d else ""
+        val = [(int(pid), title, author, des)]
         self.mycursor.executemany(req, val)
         self.mydb.commit()
         req = "INSERT IGNORE INTO Prices (Id_Product, Id_Seller, Price, ShippingAmount, NextSA) VALUES (%s, %s, %s, %s, 100)"
@@ -253,7 +254,7 @@ class wishlist_optimiser:
         for pid in self.productsId:
             req = "SELECT Name, Author FROM Product WHERE ID_PRODUCT="+str(pid)
             self.mycursor.execute(req)
-            res = self.mycursor.fetchone() or [""]
+            res = self.mycursor.fetchone() or ["", ""]
             self.productsHeadLine.append(res[0])
             self.productsAutor.append(res[1])
             req = "SELECT Id_Seller, Price, shippingAmount, NextSA FROM Prices WHERE ID_PRODUCT="+str(pid)
@@ -296,14 +297,22 @@ class wishlist_optimiser:
         return len(index)
 
     def appendProdInfos(self, d):
-        try:
-            title = d["headline"]            
-        except:
+        if "headline" in d :
+            title = d["headline"]
+        else :
             title = ""
-        try:
-            author = d['contributor']["caption"]
-        except:
+        if "contributor" in d and "caption" in d['contributor']:
+                author = d['contributor']["caption"]
+        else :
             author = ""
+        # try:
+        #     title = d["headline"]            
+        # except:
+        #     title = ""
+        # try:
+        #     author = d['contributor']["caption"]
+        # except:
+        #     author = ""
         self.productsHeadLine.append(title)
         self.productsAutor.append(author)
         return title, author
@@ -442,8 +451,8 @@ class wishlist_optimiser:
         return Prev_Sellers, Prev_Prices, Prev_ShAm, Ltime, cost[order]
 
     def dispResults(self, S, P, SA):
-        Sname = S.astype(str)
         self.printDoing("Naming")
+        Sname = S.astype(str)
         req = "SELECT Name FROM Seller WHERE ID_SELLER=%s"
         for idx, x in np.ndenumerate(S):
             if x<0:
@@ -455,7 +464,8 @@ class wishlist_optimiser:
         S = Sname
         self.printOK()
         self.printDoing("Sorting by ID")
-        index =  np.lexsort(( np.tile(self.productsId, (len(S),1)), S))
+        index =  np.lexsort( (P, S) ) #trier par nom de vendeur puis prix
+        #index =  np.lexsort( ( np.tile(self.productsId, (len(S),1)), S) ) # trier par nom de vendeur puis id
         sS = np.take_along_axis(S, index, axis=1)
         sP = np.take_along_axis(P, index, axis=1)
         sSA = np.take_along_axis(SA, index, axis=1)
@@ -469,7 +479,7 @@ class wishlist_optimiser:
                 print("Best "+str(i+1)+" / Keep in loop :"+str(LINESKEEP), file=f)
                 print("  Total : "+str(self.total_cost)+" euros", file=f)
                 print("  Time : "+str(self.total_time), file=f)
-                Rtable = np.array([sS[i],ids[l],titles[l],autors[l],sP[i]/100,sSA[i]/100]).T
+                Rtable = np.array([ sS[i],sP[i]/100,sSA[i]/100,titles[l],autors[l],ids[l] ]).T
                 print(Rtable,file=f)
                 print("*"*180,file=f)
             self.printOK()
