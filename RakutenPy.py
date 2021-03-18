@@ -18,7 +18,7 @@ from itertools import count
 
 # CONSTANTS
 # version number
-_AUTHORIZATION_ = #TODO
+_AUTHORIZATION_ = 'BFC80299-03AA-4CB2-B417-EB119DE16143|65abe6d93e264abd9f08573f4a975f64'
 _V_ = '0.4'
 LINESKEEP=1000
 BESTPRINT=1
@@ -27,7 +27,7 @@ normalsigma = 1
 _HOST_ = "127.0.0.1"
 _DATABASE_ = "rakuten"
 _DBUSER_ = "rakuten"
-_DBPASSWORD_ = #TODO
+_DBPASSWORD_ = "bTxB2cJ4PhM8fUw5"
 _DBSOCKET_ = "/opt/local/var/run/mariadb-10.2/mysqld.sock"
 
 np.set_printoptions(precision=2, linewidth=99999, suppress=True, threshold=np.inf)
@@ -165,7 +165,7 @@ class wishlist_optimiser:
         print(productsID)
         while "paginationToken" in wish_dict:
             next_url = url+"&paginationToken="+wish_dict["paginationToken"]
-            time.sleep(np.random.normal(normalmu, normalsigma)) # essayons d'être discret !
+            time.sleep(np.abs(np.random.normal(normalmu, normalsigma))) # essayons d'être discret !
             r = self.repeatRequestGet(next_url, 3)
             #r = self.session.get(next_url, allow_redirects=False)
             wish_dict = json.loads(r.text)["result"]
@@ -228,7 +228,13 @@ class wishlist_optimiser:
         if nbsellers<1:
             return
         req = "INSERT IGNORE INTO Seller (Id_Seller, NAME) VALUES (%s, %s) "
-        val = [(seller["seller"]["id"], seller["seller"]["login"]) for seller in d["adverts"]]
+        val = []
+        for seller in d["adverts"]:
+            if "login" in seller["seller"]:
+                val.append( (seller["seller"]["id"], seller["seller"]["login"]) )
+            else:
+                login = seller["seller"]["type"]+str(seller["seller"]["id"])
+                val.append( (seller["seller"]["id"],  login  ) )
         self.mycursor.executemany(req, val)
         self.mydb.commit()
         req = "INSERT IGNORE INTO Product (ID_PRODUCT, NAME, AUTHOR, EDITO) VALUES (%s, %s, %s, %s) "
@@ -283,7 +289,14 @@ class wishlist_optimiser:
             self.prices.append(np.array([0]).reshape(-1, 1))
             self.shippingAmount.append(np.array([0]).reshape(-1, 1))
             return nb
-        S = [seller["seller"]["login"] for seller in adverts]
+        #print(adverts)
+        S = []
+        for seller in adverts:
+            if "login" in seller["seller"]:
+                S.append(seller["seller"]["login"])
+            else:
+                login = seller["seller"]["type"]+str(seller["seller"]["id"])
+                S.append(login)
         P = [round(float(seller["salePrice"])*100) for seller in adverts]
         SA = [round(float(seller["shippingAmount"])*100) for seller in adverts]
         _, index = np.unique(S, return_index=True)
