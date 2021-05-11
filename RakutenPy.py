@@ -401,7 +401,8 @@ class wishlist_optimiser:
             if maxPSA > 100:
                 PSA = np.where(mask, NPSA, PSA)
                 #PSA[mask] = 100 #TODO : adapter en fonction des articles
-                Cur_SA[i] = np.max([maxPSA, Cur_SA[i]])
+                Cur_SA[i] = np.maximum(maxPSA, Cur_SA[i])
+
 
     def msqlShippingFree(self):
         req = "UPDATE Prices as P1 INNER JOIN (SELECT Id_Seller, Min(ShippingAmount) as min FROM Prices WHERE ShippingAmount<5 GROUP BY Id_Seller) as P2 ON P1.Id_Seller = P2.Id_Seller SET P1.ShippingAmount = P2.min"
@@ -411,7 +412,7 @@ class wishlist_optimiser:
     def cartesianProduct(self, A, B):
         C = np.repeat(A, len(B), axis=0)
         D = np.tile(B, (len(A), 1) )
-        return np.concatenate((C,D),axis=1), C, D
+        return np.concatenate((C,D), axis=1), C, D
 
     def computeBest(self):
         Prev_Sellers = []
