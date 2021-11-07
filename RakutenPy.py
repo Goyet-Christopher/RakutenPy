@@ -18,7 +18,7 @@ from itertools import count
 
 # CONSTANTS
 # version number
-_AUTHORIZATION_ = 'BFC80299-03AA-4CB2-B417-EB119DE16143|65abe6d93e264abd9f08573f4a975f64'
+_AUTHORIZATION_ = '********'
 _V_ = '0.4'
 LINESKEEP=1000
 BESTPRINT=1
@@ -27,8 +27,8 @@ normalsigma = 1
 _HOST_ = "127.0.0.1"
 _DATABASE_ = "rakuten"
 _DBUSER_ = "rakuten"
-_DBPASSWORD_ = "bTxB2cJ4PhM8fUw5"
-_DBSOCKET_ = "/opt/local/var/run/mariadb-10.2/mysqld.sock"
+_DBPASSWORD_ = "**********"
+_DBSOCKET_ = "/opt/local/var/run/mariadb/mysqld.sock"
 
 np.set_printoptions(precision=2, linewidth=99999, suppress=True, threshold=np.inf)
 
