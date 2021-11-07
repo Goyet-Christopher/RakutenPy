@@ -48,6 +48,13 @@ class wishlist_optimiser:
         self.quiet = args.quiet
         self.filein = args.input
         self.fileout = args.output
+        
+        if args.maxprice is not None:
+            print("maxprice =", args.maxprice)
+            self.maxprice = args.maxprice*100
+        else :
+            print("maxprice None")
+            self.maxprice = None
         if args.output is None:
             self.fileout = get_filename_datetime("txt")
         self.fileout = self.fileout
@@ -257,29 +264,44 @@ class wishlist_optimiser:
         self.prices = []
         self.shippingAmount = []
         self.nextSA = []
-        for pid in self.productsId:
-            req = "SELECT Name, Author FROM Product WHERE ID_PRODUCT="+str(pid)
-            self.mycursor.execute(req)
-            res = self.mycursor.fetchone() or ["", ""]
-            self.productsHeadLine.append(res[0])
-            self.productsAutor.append(res[1])
+        indices_to_remove = []
+        for i, pid in enumerate(self.productsId):
             req = "SELECT Id_Seller, Price, shippingAmount, NextSA FROM Prices WHERE ID_PRODUCT="+str(pid)
             self.mycursor.execute(req)
             res = self.mycursor.fetchall()
-            if len(res)==0:
-                S = np.array([-1]).reshape(-1, 1)
-                P = np.array([0]).reshape(-1, 1)
-                SA = np.array([0]).reshape(-1, 1)
-                NSA = np.array([0]).reshape(-1, 1)
-            else:
+            if self.maxprice is not None:
+                res = [e for e in res if int(e[1]) <= self.maxprice]
+            if len(res) != 0:
                 S = np.array([int(e[0]) for e in res]).reshape(-1, 1)
                 P = np.array([int(e[1]) for e in res]).reshape(-1, 1)
                 SA = np.array([int(e[2]) for e in res]).reshape(-1, 1)
                 NSA = np.array([int(e[3]) for e in res]).reshape(-1, 1)
-            self.sellers.append(S)
-            self.prices.append(P)
-            self.shippingAmount.append(SA)
-            self.nextSA.append(NSA)
+                self.sellers.append(S)
+                self.prices.append(P)
+                self.shippingAmount.append(SA)
+                self.nextSA.append(NSA)
+                req = "SELECT Name, Author FROM Product WHERE ID_PRODUCT="+str(pid)
+                self.mycursor.execute(req)
+                res = self.mycursor.fetchone() or ["", ""]
+                self.productsHeadLine.append(res[0])
+                self.productsAutor.append(res[1])
+            else:
+                indices_to_remove.append(i) 
+            # if len(res)==0:
+            #     S = np.array([-1]).reshape(-1, 1)
+            #     P = np.array([0]).reshape(-1, 1)
+            #     SA = np.array([0]).reshape(-1, 1)
+            #     NSA = np.array([0]).reshape(-1, 1)
+            # else:
+            #     S = np.array([int(e[0]) for e in res]).reshape(-1, 1)
+            #     P = np.array([int(e[1]) for e in res]).reshape(-1, 1)
+            #     SA = np.array([int(e[2]) for e in res]).reshape(-1, 1)
+            #     NSA = np.array([int(e[3]) for e in res]).reshape(-1, 1)
+            # self.sellers.append(S)
+            # self.prices.append(P)
+            # self.shippingAmount.append(SA)
+            # self.nextSA.append(NSA)
+        self.productsId = np.delete(self.productsId, indices_to_remove)
         self.printOK()
 
     def appendPricesInfos(self, adverts):
@@ -547,14 +569,16 @@ def get_parsed_args():
     parser.add_argument('-n', '--no_compute', action='store_true',
                     help='Passer le calcul.')
     parser.add_argument('-u', '--no_prices_update', action='store_true',
-                    help='Ne pas récupérer les prix sur le site.')    
+                    help='Ne pas récupérer les prix sur le site.')
+    parser.add_argument('-m', '--maxprice', metavar='maxPrice', type=int, default=None,
+                        help="Fixe un prix maximum.")                    
     parser.add_argument("-o", "--output", type=str, default=None,
                         help="Résultats du calcul.")
     parser.add_argument('-v','--version',action='version',
                         help='Affiche la version du script.',
                         version="RakutenPy v{0}".format(_V_))
     parser.add_argument('-p', '--product', metavar='produitID', type=int, default=None,
-                        help="Affiche le produit qui vous intéresse .")
+                        help="Affiche le produit qui vous intéresse.")
     parser.add_argument('-s', '--seller', metavar='Id_or_login', type=int, default=None,
                         help="Inspecter la boutique de ce vendeur.")
     parser.add_argument('-q','--quiet',action='store_true',
